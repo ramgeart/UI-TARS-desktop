@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Options
 option(BUILD_STATIC "Build static binary" OFF)
 option(BUILD_DEB "Build Debian package" ON)
+option(LLAMA_CUBLAS "Enable CUDA support for llama.cpp" OFF)
+option(ENABLE_LLAMA "Enable llama.cpp for local inference" OFF)
 
 # Find required packages
 find_package(PkgConfig REQUIRED)
@@ -29,6 +31,29 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(json)
 
+# llama.cpp for local inference (optional)
+if(ENABLE_LLAMA)
+    message(STATUS "Building with llama.cpp support")
+    FetchContent_Declare(
+        llama_cpp
+        GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
+        GIT_TAG b4968
+    )
+
+    # Configure llama.cpp options
+    set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(LLAMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(LLAMA_BUILD_SERVER OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+    if(LLAMA_CUBLAS)
+        set(GGML_CUDA ON CACHE BOOL "" FORCE)
+    endif()
+
+    FetchContent_MakeAvailable(llama_cpp)
+    add_definitions(-DHAS_LLAMA)
+endif()
+
 # Include directories
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
@@ -38,6 +63,13 @@ include_directories(
     ${PNG_INCLUDE_DIRS}
     ${JPEG_INCLUDE_DIRS}
 )
+
+if(ENABLE_LLAMA)
+    include_directories(
+        ${llama_cpp_SOURCE_DIR}/include
+        ${llama_cpp_SOURCE_DIR}/common
+    )
+endif()
 
 if(WAYLAND_FOUND)
     include_directories(${WAYLAND_INCLUDE_DIRS})
@@ -51,6 +83,7 @@ set(SOURCES
     src/screenshot.cpp
     src/input_controller.cpp
     src/vlm_client.cpp
+    src/llama_inference.cpp
     src/action_parser.cpp
     src/config.cpp
     src/logger.cpp
@@ -70,6 +103,10 @@ target_link_libraries(ui-tars-agent
     nlohmann_json::nlohmann_json
     pthread
 )
+
+if(ENABLE_LLAMA)
+    target_link_libraries(ui-tars-agent llama common)
+endif()
 
 if(XINERAMA_FOUND)
     target_link_libraries(ui-tars-agent ${XINERAMA_LIBRARIES})
@@ -96,8 +133,8 @@ if(BUILD_DEB)
     set(CPACK_GENERATOR "DEB")
     set(CPACK_PACKAGE_NAME "ui-tars-agent")
     set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "UI-TARS Linux GUI Agent")
-    set(CPACK_PACKAGE_DESCRIPTION "A native Linux GUI agent for computer automation using Vision-Language Models")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "UI-TARS Linux GUI Agent with embedded inference")
+    set(CPACK_PACKAGE_DESCRIPTION "A native Linux GUI agent for computer automation using Vision-Language Models. Supports embedded inference with llama.cpp and GGUF models.")
     set(CPACK_PACKAGE_MAINTAINER "ByteDance")
     set(CPACK_PACKAGE_HOMEPAGE_URL "https://github.com/bytedance/UI-TARS-desktop")
     set(CPACK_DEBIAN_PACKAGE_DEPENDS "libx11-6, libxtst6, libcurl4, libpng16-16, libjpeg62-turbo")

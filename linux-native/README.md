@@ -1,22 +1,62 @@
 # UI-TARS Linux Native Agent
 
-A native Linux C++ implementation of the UI-TARS GUI Agent for computer automation using Vision-Language Models.
+A native Linux C++ implementation of the UI-TARS GUI Agent for computer automation using Vision-Language Models. Supports both API-based and **local embedded inference** with llama.cpp.
 
 ## Features
 
 - 🐧 **Native Linux Support** - Built specifically for Linux with X11 support
+- 🧠 **Local Inference** - Run UI-TARS-1.5-7B models locally with llama.cpp (no API key needed!)
 - 🚀 **High Performance** - C++ implementation for optimal performance
 - 📦 **Easy Installation** - Available as .deb package or single binary
 - 🔄 **Service Mode** - Run as a systemd service
+- 💬 **Chat Interface** - Interactive chat mode with command support
 - 🎯 **GUI Automation** - Mouse, keyboard, and screen capture control
-- 🤖 **VLM Integration** - Supports OpenAI, Anthropic, and Volcengine models
+- 🤖 **VLM Integration** - Supports OpenAI, Anthropic, Volcengine, and local GGUF models
 
 ## System Requirements
 
 - Linux (Ubuntu 20.04+, Debian 11+, or compatible)
 - X11 display server (Wayland support planned)
-- At least 2GB RAM
-- Network access for VLM API calls
+- For local inference:
+  - At least 8GB RAM (16GB recommended for 7B models)
+  - CUDA GPU optional but recommended
+- For API mode:
+  - At least 2GB RAM
+  - Network access for VLM API calls
+
+## Quick Start - Local Inference (Recommended)
+
+Run UI-TARS completely offline without any API keys!
+
+### 1. Download GGUF Models
+
+```bash
+# Create models directory
+mkdir -p ~/models
+
+# Download UI-TARS-1.5-7B quantized model (Q4_K_S - ~4GB)
+wget -O ~/models/UI-TARS-1.5-7B.gguf \
+  https://huggingface.co/mradermacher/UI-TARS-1.5-7B-i1-GGUF/resolve/main/UI-TARS-1.5-7B.i1-Q4_K_S.gguf
+
+# Download multimodal projector (for vision support)
+wget -O ~/models/UI-TARS-1.5-7B.mmproj.gguf \
+  https://huggingface.co/mradermacher/UI-TARS-1.5-7B-GGUF/resolve/main/UI-TARS-1.5-7B.mmproj-Q8_0.gguf
+```
+
+### 2. Run with Local Model
+
+```bash
+# Run with single instruction
+ui-tars-agent --provider local \
+              --model-path ~/models/UI-TARS-1.5-7B.gguf \
+              --mmproj-path ~/models/UI-TARS-1.5-7B.mmproj.gguf \
+              -i "Open Firefox and search for weather"
+
+# Run in interactive chat mode
+ui-tars-agent --provider local \
+              --model-path ~/models/UI-TARS-1.5-7B.gguf \
+              --mmproj-path ~/models/UI-TARS-1.5-7B.mmproj.gguf
+```
 
 ## Dependencies
 
@@ -45,6 +85,9 @@ cd linux-native
 # Static binary (single executable)
 ./scripts/build.sh --static
 
+# With CUDA GPU support
+./scripts/build.sh --cuda
+
 # Clean build
 ./scripts/build.sh --clean
 ```
@@ -53,7 +96,13 @@ cd linux-native
 
 ```bash
 mkdir build && cd build
+
+# Standard build
 cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
+
+# With CUDA support for faster local inference
+cmake .. -DCMAKE_BUILD_TYPE=Release -DLLAMA_CUBLAS=ON
 make -j$(nproc)
 
 # Create Debian package
@@ -99,10 +148,21 @@ Edit `/etc/ui-tars/ui-tars-agent.conf`:
 
 ```ini
 # Model Configuration
-provider = openai
-model = gpt-4-vision-preview
-temperature = 0.0
-max_tokens = 4096
+# Use provider = local for embedded inference
+provider = local
+
+# For API providers (openai, anthropic, volcengine):
+# provider = openai
+# model = gpt-4-vision-preview
+# api_key = your-api-key
+
+# Local Model Configuration
+model_path = /home/user/models/UI-TARS-1.5-7B.gguf
+mmproj_path = /home/user/models/UI-TARS-1.5-7B.mmproj.gguf
+n_ctx = 4096
+n_batch = 512
+n_threads = 4
+n_gpu_layers = 0  # Set to 35 for full GPU offload
 
 # Agent Configuration
 max_loop_count = 50
@@ -115,19 +175,51 @@ log_path = /var/log/ui-tars-agent.log
 
 ### Environment Variables
 
-Set your API key in `/etc/ui-tars/ui-tars-agent.env`:
+For API providers, set in `/etc/ui-tars/ui-tars-agent.env`:
 
 ```bash
 UI_TARS_API_KEY=your-api-key-here
 ```
 
-Or export directly:
+For local models:
 
 ```bash
-export UI_TARS_API_KEY=your-api-key-here
+export UI_TARS_PROVIDER=local
+export UI_TARS_MODEL_PATH=/path/to/model.gguf
+export UI_TARS_MMPROJ_PATH=/path/to/mmproj.gguf
+export UI_TARS_N_GPU_LAYERS=35  # For GPU acceleration
 ```
 
 ## Usage
+
+### Interactive Chat Mode
+
+```bash
+# Start chat interface with local model
+ui-tars-agent --provider local --model-path ~/models/UI-TARS-1.5-7B.gguf
+
+# ╔══════════════════════════════════════════════════════════════╗
+# ║           UI-TARS Linux Agent - Chat Interface               ║
+# ╚══════════════════════════════════════════════════════════════╝
+# Using: Local model (UI-TARS-1.5-7B)
+# 
+# === UI-TARS Chat Interface ===
+# Commands:
+#   /help     - Show this help
+#   /run      - Execute the last instruction
+#   /pause    - Pause current execution
+#   /resume   - Resume paused execution
+#   /stop     - Stop current execution
+#   /status   - Show agent status
+#   /clear    - Clear conversation history
+#   /quit     - Exit the program
+# 
+# > Open Firefox and search for "weather"
+# Executing: Open Firefox and search for "weather"
+# [running] Taking screenshot...
+# [running] Action: click(element='Firefox icon')
+# ...
+```
 
 ### Command Line
 
@@ -135,20 +227,22 @@ export UI_TARS_API_KEY=your-api-key-here
 # Show help
 ui-tars-agent --help
 
-# Run with an instruction
-ui-tars-agent -i "Open Firefox and search for weather"
+# Run with local model
+ui-tars-agent --provider local \
+              --model-path ~/models/UI-TARS-1.5-7B.gguf \
+              -i "Open Firefox and search for weather"
 
-# Run with custom provider
+# Run with API provider
 ui-tars-agent --provider anthropic \
               --model claude-3-5-sonnet \
               --api-key sk-your-key \
               -i "Take a screenshot"
 
-# Interactive mode
-ui-tars-agent
-> Open the terminal
-> Type 'hello world'
-> quit
+# Local model with GPU acceleration
+ui-tars-agent --provider local \
+              --model-path ~/models/UI-TARS-1.5-7B.gguf \
+              --n-gpu-layers 35 \
+              -i "Open terminal and run ls"
 ```
 
 ### As a Systemd Service
@@ -186,7 +280,19 @@ echo "resume" | nc -U /var/run/ui-tars-agent.sock
 echo "stop" | nc -U /var/run/ui-tars-agent.sock
 ```
 
-## Supported VLM Providers
+## Supported Models
+
+### Local GGUF Models (Embedded Inference)
+
+| Model | Size | VRAM | Notes |
+|-------|------|------|-------|
+| UI-TARS-1.5-7B.i1-Q4_K_S.gguf | ~4GB | 6GB | Recommended, good balance |
+| UI-TARS-1.5-7B.i1-Q5_K_M.gguf | ~5GB | 8GB | Higher quality |
+| UI-TARS-1.5-7B.i1-Q8_0.gguf | ~7GB | 10GB | Highest quality |
+
+Download from: https://huggingface.co/mradermacher/UI-TARS-1.5-7B-i1-GGUF
+
+### API Providers
 
 | Provider | Models | Notes |
 |----------|--------|-------|
@@ -205,6 +311,23 @@ ui-tars-agent --provider custom \
               --api-key your-key
 ```
 
+## Performance Tips
+
+### For Local Inference
+
+1. **Use GPU Offloading** - Set `--n-gpu-layers 35` for full GPU offload (requires CUDA build)
+2. **Adjust Context Size** - Lower `--n-ctx 2048` for faster inference
+3. **Thread Count** - Match `--n-threads` to your CPU cores
+4. **Use Quantized Models** - Q4_K_S offers best speed/quality ratio
+
+### Memory Requirements
+
+| Model Quantization | RAM (CPU) | VRAM (GPU) |
+|-------------------|-----------|------------|
+| Q4_K_S | 8GB | 6GB |
+| Q5_K_M | 10GB | 8GB |
+| Q8_0 | 16GB | 10GB |
+
 ## Troubleshooting
 
 ### X11 Display Issues
@@ -218,6 +341,19 @@ xdpyinfo
 
 # Grant X11 access (if needed)
 xhost +local:
+```
+
+### Local Model Loading Issues
+
+```bash
+# Check if model file exists
+ls -la ~/models/UI-TARS-1.5-7B.gguf
+
+# Verify file integrity
+sha256sum ~/models/UI-TARS-1.5-7B.gguf
+
+# Run with debug logging
+ui-tars-agent --provider local --model-path ~/models/UI-TARS-1.5-7B.gguf -l /tmp/debug.log
 ```
 
 ### Permission Issues
@@ -249,6 +385,7 @@ rm -rf build && ./scripts/build.sh --clean
 linux-native/
 ├── include/           # Header files
 │   ├── gui_agent.h    # Main agent class
+│   ├── llama_inference.h  # Local inference with llama.cpp
 │   ├── screenshot.h   # Screen capture
 │   ├── input_controller.h  # Mouse/keyboard control
 │   ├── vlm_client.h   # VLM API client

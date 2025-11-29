@@ -11,17 +11,32 @@
 namespace uitars {
 
 struct ModelConfig {
-    std::string provider;      // e.g., "openai", "anthropic", "volcengine"
-    std::string model;         // e.g., "gpt-4-vision-preview"
+    std::string provider;      // e.g., "openai", "anthropic", "volcengine", "local"
+    std::string model;         // e.g., "gpt-4-vision-preview" or path to GGUF
     std::string apiKey;
     std::string baseUrl;       // API endpoint
     double temperature = 0.0;
     int maxTokens = 4096;
 };
 
+struct LocalModelConfig {
+    std::string modelPath;     // Path to main GGUF model
+    std::string mmprojPath;    // Path to multimodal projector GGUF
+    int nCtx = 4096;           // Context size
+    int nBatch = 512;          // Batch size  
+    int nThreads = 4;          // Number of threads
+    int nGpuLayers = 0;        // GPU layers (0 = CPU only)
+    bool useFlashAttn = false; // Use flash attention
+    bool useMmap = true;       // Memory-map model
+    bool useMlock = false;     // Lock model in memory
+};
+
 struct Config {
     // Model configuration
     ModelConfig model;
+    
+    // Local model configuration (for embedded inference)
+    LocalModelConfig localModel;
     
     // Agent configuration
     int maxLoopCount = 50;
@@ -55,6 +70,9 @@ struct Config {
     
     // Validate configuration
     bool validate() const;
+    
+    // Check if using local model
+    bool isLocalModel() const { return model.provider == "local"; }
 };
 
 } // namespace uitars
