@@ -1,0 +1,20 @@
+#!/bin/bash
+# Pre-removal script for ui-tars-agent
+
+set -e
+
+# Stop the service if running
+if systemctl is-active --quiet ui-tars-agent; then
+    echo "Stopping ui-tars-agent service..."
+    systemctl stop ui-tars-agent
+fi
+
+# Disable the service
+if systemctl is-enabled --quiet ui-tars-agent 2>/dev/null; then
+    echo "Disabling ui-tars-agent service..."
+    systemctl disable ui-tars-agent
+fi
+
+echo "UI-TARS Agent stopped and disabled."
+
+exit 0

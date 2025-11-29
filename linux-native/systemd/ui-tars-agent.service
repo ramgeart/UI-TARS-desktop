@@ -1,0 +1,35 @@
+[Unit]
+Description=UI-TARS Linux GUI Agent
+Documentation=https://github.com/bytedance/UI-TARS-desktop
+After=network.target graphical.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# Environment file for API keys and configuration
+EnvironmentFile=-/etc/ui-tars/ui-tars-agent.env
+
+# Main executable
+ExecStart=/usr/bin/ui-tars-agent --daemon --config /etc/ui-tars/ui-tars-agent.conf
+
+# Restart configuration
+Restart=on-failure
+RestartSec=10
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ui-tars-agent
+
+# Security hardening
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+
+# Required for X11 access
+Environment=DISPLAY=:0
+
+[Install]
+WantedBy=multi-user.target
