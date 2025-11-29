@@ -71,6 +71,8 @@ Config Config::loadFromFile(const std::string& path) {
             config.modelRetries = std::stoi(value);
         } else if (key == "execute_retries" || key == "executeRetries") {
             config.executeRetries = std::stoi(value);
+        } else if (key == "api_timeout" || key == "apiTimeoutSeconds") {
+            config.apiTimeoutSeconds = std::stoi(value);
         } else if (key == "socket_path" || key == "socketPath") {
             config.socketPath = value;
         } else if (key == "log_path" || key == "logPath") {
@@ -112,6 +114,10 @@ Config Config::loadFromEnv() {
     
     const char* loopIntervalMs = std::getenv("UI_TARS_LOOP_INTERVAL_MS");
     if (loopIntervalMs) config.loopIntervalMs = std::stoi(loopIntervalMs);
+    
+    // Network configuration
+    const char* apiTimeout = std::getenv("UI_TARS_API_TIMEOUT");
+    if (apiTimeout) config.apiTimeoutSeconds = std::stoi(apiTimeout);
     
     // Service configuration
     const char* socketPath = std::getenv("UI_TARS_SOCKET_PATH");

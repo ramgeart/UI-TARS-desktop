@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
         // Run as daemon/service
         logger->info("Starting UI-TARS agent as daemon...");
         
-        if (Service::daemonize()) {
+        if (!Service::daemonize()) {
             logger->error("Failed to daemonize");
             return 1;
         }

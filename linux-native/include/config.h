@@ -32,6 +32,9 @@ struct Config {
     int modelRetries = 3;
     int executeRetries = 3;
     
+    // Network configuration
+    int apiTimeoutSeconds = 120;  // Timeout for VLM API calls
+    
     // Service configuration
     bool runAsService = false;
     std::string socketPath = "/var/run/ui-tars-agent.sock";

@@ -138,8 +138,10 @@ bool Service::isRunning() const {
 }
 
 bool Service::createSocket() {
-    // Remove existing socket file
-    unlink(config_.socketPath.c_str());
+    // Remove existing socket file (ignore errors if file doesn't exist)
+    if (unlink(config_.socketPath.c_str()) < 0 && errno != ENOENT) {
+        logger_->warn("Could not remove existing socket file: " + std::string(strerror(errno)));
+    }
     
     socketFd_ = socket(AF_UNIX, SOCK_STREAM, 0);
     if (socketFd_ < 0) {
@@ -191,7 +193,14 @@ void Service::handleConnections() {
         
         // Read command
         char buffer[4096];
+        memset(buffer, 0, sizeof(buffer));
         ssize_t n = read(clientFd, buffer, sizeof(buffer) - 1);
+        
+        if (n < 0) {
+            logger_->error("Failed to read from client: " + std::string(strerror(errno)));
+            close(clientFd);
+            continue;
+        }
         
         if (n > 0) {
             buffer[n] = '\0';

@@ -23,10 +23,13 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=ui-tars-agent
 
-# Security hardening
-NoNewPrivileges=false
+# Security hardening (note: X11 access requires some permissions)
+# Set to false/true as needed based on X11 access requirements
+NoNewPrivileges=true
 ProtectSystem=false
 ProtectHome=false
+# X11 requires access to /tmp/.X11-unix and user home for .Xauthority
+PrivateTmp=false
 
 # Required for X11 access
 Environment=DISPLAY=:0

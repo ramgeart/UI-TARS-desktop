@@ -165,7 +165,7 @@ VLMResponse VLMClient::invoke(
     curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, requestBody.c_str());
     curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, writeCallback);
     curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &responseBody);
-    curl_easy_setopt(curl_, CURLOPT_TIMEOUT, 120L);  // 2 minute timeout
+    curl_easy_setopt(curl_, CURLOPT_TIMEOUT, static_cast<long>(config_.apiTimeoutSeconds));
     curl_easy_setopt(curl_, CURLOPT_SSL_VERIFYPEER, 1L);
     
     CURLcode res = curl_easy_perform(curl_);
