@@ -11,6 +11,7 @@
 #include <functional>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
 
 #include "types.h"
 #include "vlm_client.h"

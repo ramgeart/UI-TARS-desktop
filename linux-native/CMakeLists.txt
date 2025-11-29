@@ -20,7 +20,7 @@ pkg_check_modules(JPEG REQUIRED libjpeg)
 # Optional Wayland support
 pkg_check_modules(WAYLAND wayland-client)
 
-# JSON library (header-only, included in source)
+# JSON library (header-only)
 include(FetchContent)
 FetchContent_Declare(
     json
@@ -28,14 +28,6 @@ FetchContent_Declare(
     GIT_TAG v3.11.3
 )
 FetchContent_MakeAvailable(json)
-
-# Base64 encoding library
-FetchContent_Declare(
-    base64
-    GIT_REPOSITORY https://github.com/tobiaslocker/base64.git
-    GIT_TAG v0.1.0
-)
-FetchContent_MakeAvailable(base64)
 
 # Include directories
 include_directories(

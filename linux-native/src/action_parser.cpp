@@ -6,6 +6,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cmath>
+#include <regex>
 
 namespace uitars {
 
@@ -85,7 +86,7 @@ ParsedAction ActionParser::parseAction(const std::string& actionStr) {
             }
             
             // Also try double quotes
-            std::regex paramRegex2(R"((\w+)\s*=\s*"([^"]*)")");
+            std::regex paramRegex2(R"((\w+)\s*=\s*\"([^\"]*)\")");
             searchStart = params.cbegin();
             while (std::regex_search(searchStart, params.cend(), match, paramRegex2)) {
                 std::string key = match[1].str();

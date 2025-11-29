@@ -6,6 +6,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <png.h>
+#include <X11/Xresource.h>
 
 namespace uitars {
 

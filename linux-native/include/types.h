@@ -12,13 +12,13 @@
 
 namespace uitars {
 
-// Status enumeration
-enum class Status {
+// Agent status enumeration (renamed to avoid X11 conflict)
+enum class AgentStatus {
     INIT,
     RUNNING,
     PAUSE,
     END,
-    ERROR,
+    FAILED,
     USER_STOPPED,
     CALL_USER
 };
@@ -90,7 +90,7 @@ struct Conversation {
 struct AgentData {
     std::string instruction;
     std::string modelName;
-    Status status;
+    AgentStatus status;
     std::vector<Conversation> conversations;
     int64_t logTime;
 };
@@ -161,16 +161,16 @@ inline ActionType stringToActionType(const std::string& str) {
     return ActionType::UNKNOWN;
 }
 
-// Convert Status to string
-inline std::string statusToString(Status status) {
+// Convert AgentStatus to string
+inline std::string statusToString(AgentStatus status) {
     switch (status) {
-        case Status::INIT: return "init";
-        case Status::RUNNING: return "running";
-        case Status::PAUSE: return "pause";
-        case Status::END: return "end";
-        case Status::ERROR: return "error";
-        case Status::USER_STOPPED: return "user_stopped";
-        case Status::CALL_USER: return "call_user";
+        case AgentStatus::INIT: return "init";
+        case AgentStatus::RUNNING: return "running";
+        case AgentStatus::PAUSE: return "pause";
+        case AgentStatus::END: return "end";
+        case AgentStatus::FAILED: return "error";
+        case AgentStatus::USER_STOPPED: return "user_stopped";
+        case AgentStatus::CALL_USER: return "call_user";
         default: return "unknown";
     }
 }

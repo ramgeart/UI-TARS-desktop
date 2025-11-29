@@ -6,6 +6,7 @@
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <chrono>
+#include <regex>
 
 using json = nlohmann::json;
 

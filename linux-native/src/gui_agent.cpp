@@ -43,7 +43,7 @@ bool GUIAgent::run(const std::string& instruction) {
     AgentData data;
     data.instruction = instruction;
     data.modelName = vlmClient_->getModelName();
-    data.status = Status::RUNNING;
+    data.status = AgentStatus::RUNNING;
     data.logTime = std::chrono::duration_cast<std::chrono::milliseconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
@@ -64,7 +64,7 @@ bool GUIAgent::run(const std::string& instruction) {
     while (running_ && !stopped_) {
         // Check pause status
         if (paused_) {
-            data.status = Status::PAUSE;
+            data.status = AgentStatus::PAUSE;
             notifyData(data);
             
             std::unique_lock<std::mutex> lock(pauseMutex_);
@@ -72,14 +72,14 @@ bool GUIAgent::run(const std::string& instruction) {
             
             if (stopped_) break;
             
-            data.status = Status::RUNNING;
+            data.status = AgentStatus::RUNNING;
             notifyData(data);
         }
         
         // Check loop count
         if (loopCount_ >= MAX_LOOP_COUNT) {
             logger_->error("Reached maximum loop count");
-            data.status = Status::ERROR;
+            data.status = AgentStatus::FAILED;
             notifyError({ErrorStatus::REACH_MAXLOOP_ERROR, "Reached maximum loop count", ""});
             break;
         }
@@ -87,7 +87,7 @@ bool GUIAgent::run(const std::string& instruction) {
         // Check snapshot error count
         if (snapshotErrCnt >= MAX_SNAPSHOT_ERR_CNT) {
             logger_->error("Too many screenshot failures");
-            data.status = Status::ERROR;
+            data.status = AgentStatus::FAILED;
             notifyError({ErrorStatus::SCREENSHOT_RETRY_ERROR, "Too many screenshot failures", ""});
             break;
         }
@@ -145,7 +145,7 @@ bool GUIAgent::run(const std::string& instruction) {
             );
         } catch (const std::exception& e) {
             logger_->error("VLM invoke failed: " + std::string(e.what()));
-            data.status = Status::ERROR;
+            data.status = AgentStatus::FAILED;
             notifyError({ErrorStatus::INVOKE_RETRY_ERROR, std::string("VLM invoke failed: ") + e.what(), ""});
             break;
         }
@@ -178,13 +178,13 @@ bool GUIAgent::run(const std::string& instruction) {
             logger_->info("Executing action: " + action.actionTypeStr);
             
             if (action.actionType == ActionType::FINISHED) {
-                data.status = Status::END;
+                data.status = AgentStatus::END;
                 logger_->info("Task finished");
                 break;
             }
             
             if (action.actionType == ActionType::CALL_USER) {
-                data.status = Status::CALL_USER;
+                data.status = AgentStatus::CALL_USER;
                 logger_->info("Calling user for help");
                 break;
             }
@@ -194,7 +194,7 @@ bool GUIAgent::run(const std::string& instruction) {
             }
         }
         
-        if (data.status == Status::END || data.status == Status::CALL_USER) {
+        if (data.status == AgentStatus::END || data.status == AgentStatus::CALL_USER) {
             break;
         }
         
@@ -209,7 +209,7 @@ bool GUIAgent::run(const std::string& instruction) {
     
     logger_->info("Agent run completed with status: " + statusToString(data.status));
     
-    return data.status == Status::END;
+    return data.status == AgentStatus::END;
 }
 
 void GUIAgent::pause() {
