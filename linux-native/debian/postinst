@@ -1,0 +1,42 @@
+#!/bin/bash
+# Post-installation script for ui-tars-agent
+
+set -e
+
+# Create configuration directory
+mkdir -p /etc/ui-tars
+
+# Copy default configuration if not exists
+if [ ! -f /etc/ui-tars/ui-tars-agent.conf ]; then
+    cp /usr/share/ui-tars/ui-tars-agent.conf /etc/ui-tars/
+fi
+
+# Copy environment template if not exists
+if [ ! -f /etc/ui-tars/ui-tars-agent.env ]; then
+    cp /usr/share/ui-tars/ui-tars-agent.env /etc/ui-tars/
+    chmod 600 /etc/ui-tars/ui-tars-agent.env
+fi
+
+# Create log directory
+mkdir -p /var/log
+touch /var/log/ui-tars-agent.log
+
+# Reload systemd
+systemctl daemon-reload
+
+echo ""
+echo "UI-TARS Agent installed successfully!"
+echo ""
+echo "To configure the agent:"
+echo "  1. Edit /etc/ui-tars/ui-tars-agent.conf with your settings"
+echo "  2. Add your API key to /etc/ui-tars/ui-tars-agent.env"
+echo ""
+echo "To start the service:"
+echo "  sudo systemctl start ui-tars-agent"
+echo "  sudo systemctl enable ui-tars-agent  # Enable at boot"
+echo ""
+echo "To run manually:"
+echo "  ui-tars-agent --help"
+echo ""
+
+exit 0
