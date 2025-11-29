@@ -37,7 +37,7 @@ if(ENABLE_LLAMA)
     FetchContent_Declare(
         llama_cpp
         GIT_REPOSITORY https://github.com/ggerganov/llama.cpp.git
-        GIT_TAG b4968
+        GIT_TAG b4968   # Version tag - update to latest stable as needed
     )
 
     # Configure llama.cpp options

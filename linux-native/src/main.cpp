@@ -348,10 +348,13 @@ int main(int argc, char* argv[]) {
                 break;
             }
             
-            if (input.empty()) continue;
+            // Skip empty input
+            if (input.empty()) {
+                continue;
+            }
             
-            // Handle commands
-            if (input[0] == '/') {
+            // Handle commands (must start with /)
+            if (!input.empty() && input[0] == '/') {
                 if (input == "/quit" || input == "/exit" || input == "/q") {
                     std::cout << "Goodbye!" << std::endl;
                     break;

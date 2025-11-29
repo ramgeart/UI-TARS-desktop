@@ -63,16 +63,17 @@ bool LlamaInference::loadModel() {
     }
     modelFile.close();
 
-    // TODO: Initialize llama.cpp backend
-    // This is a placeholder - actual implementation requires llama.cpp library
+#ifdef HAS_LLAMA
+    // TODO: Initialize llama.cpp backend when ENABLE_LLAMA is set
     // The build system will fetch and link llama.cpp
+    logger_->info("llama.cpp backend available");
+#else
+    logger_->warn("Built without llama.cpp support. Local inference will use stub responses.");
+    logger_->warn("Rebuild with: cmake -DENABLE_LLAMA=ON for real local inference.");
+#endif
     
-    logger_->info("Model loading requires llama.cpp library");
-    logger_->info("Build with: cmake -DLLAMA_CUBLAS=ON for GPU support");
-    
-    // For now, set as loaded to allow testing other parts
     modelLoaded_ = true;
-    logger_->info("Model stub loaded (llama.cpp integration pending)");
+    logger_->info("Model registered: " + getModelName());
     
     return true;
 }
@@ -262,18 +263,23 @@ VLMResponse LlamaInference::generate(const std::string& systemPrompt,
         }
     }
     
-    // TODO: Actual inference with llama.cpp
-    // For now, return a placeholder response
-    response.prediction = "Thought: I need to analyze the screen and determine the next action.\n"
+#ifdef HAS_LLAMA
+    // TODO: Actual inference with llama.cpp when ENABLE_LLAMA is set
+    throw std::runtime_error("llama.cpp inference not yet implemented. "
+                            "Use API providers (openai, anthropic) or wait for full llama.cpp integration.");
+#else
+    // Stub response for builds without llama.cpp
+    logger_->warn("Using stub response - build with ENABLE_LLAMA=ON for real inference");
+    response.prediction = "Thought: [STUB] llama.cpp not enabled. This is a placeholder response.\n"
                          "Action: wait(duration='1')";
     response.parsedPredictions = parseActions(response.prediction);
     response.costTokens = 50;
+#endif
     
     auto endTime = std::chrono::steady_clock::now();
     response.costTime = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
     
     logger_->info("Generated response in " + std::to_string(response.costTime) + "ms");
-    logger_->warn("Note: Using placeholder response - llama.cpp integration pending");
     
     return response;
 }
