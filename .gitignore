@@ -14,3 +14,4 @@ scripts/merge-yml/*.yml
 .tarko
 .mcp*_token
 linux-native/build/
+linux-native/_codeql_build_dir/
